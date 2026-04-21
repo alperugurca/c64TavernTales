@@ -1,6 +1,6 @@
 # C64 Tavern Tales
 
-Single-file **web app**: a C64-styled **idle RPG** you run by opening the HTML.
+Single-file **web app**. C64-styled **idle RPG** you run by opening the HTML.
 
 ![C64 Tavern Tales screenshot](assets/alperugurcan.byethost5.com.png)
 
