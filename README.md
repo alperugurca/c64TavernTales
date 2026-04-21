@@ -2,6 +2,10 @@
 
 Single-file **web app**: a C64-styled **idle RPG** you run by opening the HTML.
 
+## Live site
+
+`alperugurcan.byethost5.com`
+
 ## How to play
 
 - Open `c64_tavern_tales.html` in a modern browser (Chrome / Edge / Firefox).
@@ -28,6 +32,15 @@ Single-file **web app**: a C64-styled **idle RPG** you run by opening the HTML.
 ## Project layout
 
 - `c64_tavern_tales.html`: all HTML/CSS/JS in one file
+
+## Screenshot (GitHub)
+
+1) Take a screenshot and save it into this repo (example: `assets/screenshot.png`)  
+2) Add this line to the README:
+
+```md
+![C64 Tavern Tales screenshot](assets/screenshot.png)
+```
 
 ## License
 
