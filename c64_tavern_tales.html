@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C64 Tavern Tales</title>
+  <link id="favicon" rel="icon" type="image/svg+xml" />
+  <style>
+    :root {
+      --bg: #40318d;
+      --panel: #5040a5;
+      --light: #87d6dd;
+      --text: #ffffff;
+      --accent: #ffec27;
+      --danger: #ff6b6b;
+      --good: #7CFF6B;
+      --border: #a594ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Courier New", monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .screen {
+      width: min(980px, 100%);
+      background: var(--panel);
+      border: 6px solid var(--border);
+      box-shadow: 0 0 0 6px var(--bg), 0 0 40px rgba(0,0,0,0.35);
+      padding: 18px;
+    }
+
+    .title {
+      text-align: center;
+      color: var(--accent);
+      font-size: clamp(24px, 4vw, 40px);
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      text-shadow: 2px 2px 0 var(--bg);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+    }
+
+    .panel {
+      border: 3px solid var(--light);
+      padding: 12px;
+      background: rgba(64, 49, 141, 0.45);
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: var(--light);
+    }
+
+    .stats, .actions, .shop, .save-controls {
+      display: grid;
+      gap: 8px;
+    }
+
+    .stat-line, .log-line, .shop-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .bar {
+      width: 100%;
+      height: 18px;
+      border: 2px solid var(--light);
+      background: var(--bg);
+      margin-top: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      background: var(--good);
+      width: 100%;
+      transition: width 0.2s linear;
+    }
+
+    button, textarea {
+      font: inherit;
+    }
+
+    button {
+      width: 100%;
+      background: var(--light);
+      color: #111;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-weight: bold;
+      box-shadow: 3px 3px 0 var(--bg);
+    }
+
+    button:hover { filter: brightness(1.06); }
+    button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--bg); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      padding: 10px;
+      border: 3px solid var(--light);
+      background: rgba(0,0,0,0.18);
+      color: var(--text);
+    }
+
+    .enemy-name { color: var(--accent); }
+    .danger { color: var(--danger); }
+    .good { color: var(--good); }
+    .small { font-size: 12px; color: var(--light); }
+
+    .log {
+      height: 220px;
+      overflow: auto;
+      border: 3px solid var(--light);
+      padding: 10px;
+      background: rgba(0,0,0,0.18);
+      font-size: 14px;
+    }
+
+    .sprite-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px;
+      border: 3px solid var(--light);
+      background: rgba(0,0,0,0.18);
+      margin-bottom: 10px;
+    }
+
+    .sprite-slot {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .sprite-name {
+      color: var(--light);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+
+    .pixel-sprite {
+      width: 52px;
+      height: 52px;
+      flex: 0 0 52px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      image-rendering: pixelated;
+      shape-rendering: crispEdges;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 3px solid var(--light);
+      background: rgba(0,0,0,0.18);
+      margin-bottom: 10px;
+    }
+
+    .footer {
+      margin-top: 14px;
+      text-align: center;
+      color: var(--light);
+      font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <div class="title">C64 TAVERN TALES</div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>HERO STATUS</h2>
+        <div class="stats" id="stats"></div>
+
+        <h2 style="margin-top:16px;">BATTLEFIELD</h2>
+        <div id="battle"></div>
+
+        <div class="actions" style="margin-top:12px;">
+          <button id="fightBtn">Attack Enemy</button>
+          <button id="healBtn">Drink Potion (10 gold)</button>
+          <button id="autoBtn">Auto Battle: OFF</button>
+        </div>
+
+        <h2 style="margin-top:16px;">BATTLE LOG</h2>
+        <div class="log" id="log"></div>
+      </div>
+
+      <div class="panel">
+        <h2>TAVERN & SHOP</h2>
+        <div class="shop" id="shop"></div>
+
+        <h2 style="margin-top:16px;">QUESTS</h2>
+        <div id="quests"></div>
+
+        <h2 style="margin-top:16px;">SAVE SYSTEM</h2>
+        <div class="save-controls">
+          <button id="saveBtn">Save Now</button>
+          <button id="exportBtn">Export Save</button>
+          <button id="importBtn">Import Save</button>
+          <textarea id="saveData" placeholder="Exported save code appears here. Paste save code here, then click Import Save."></textarea>
+          <div class="small" id="saveStatus">Local autosave enabled.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">RETRO IDLE ADVENTURE • COMMODORE 64 INSPIRED COLORS • LOCAL AUTOSAVE + EXPORT/IMPORT</div>
+  </div>
+
+  <script>
+    // Inline favicon (no external files)
+    (function setInlineFavicon() {
+      const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="C64 Tavern Tales icon">
+  <defs>
+    <style>
+      .bg { fill:#40318d; }
+      .panel { fill:#5040a5; }
+      .border { fill:#a594ff; }
+      .light { fill:#87d6dd; }
+      .accent { fill:#ffec27; }
+      .danger { fill:#ff6b6b; }
+      .good { fill:#7cff6b; }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="256" height="256"/>
+  <rect class="border" x="18" y="18" width="220" height="220" rx="14"/>
+  <rect class="panel" x="30" y="30" width="196" height="196" rx="10"/>
+  <rect class="light" x="58" y="64" width="92" height="118" rx="8"/>
+  <rect class="bg" x="68" y="74" width="72" height="30" rx="4"/>
+  <rect class="accent" x="74" y="82" width="24" height="6" rx="2"/>
+  <rect class="accent" x="104" y="82" width="30" height="6" rx="2"/>
+  <rect class="bg" x="78" y="118" width="52" height="52" rx="6"/>
+  <rect class="light" x="86" y="126" width="36" height="36" rx="5"/>
+  <rect class="bg" x="100" y="126" width="8" height="36"/>
+  <rect class="accent" x="138" y="108" width="62" height="78" rx="10"/>
+  <rect class="bg" x="148" y="120" width="42" height="54" rx="8"/>
+  <rect class="danger" x="146" y="108" width="46" height="16" rx="8"/>
+  <path class="accent" d="M200 126h10c10 0 18 8 18 18s-8 18-18 18h-10v-14h8c3 0 6-3 6-6s-3-6-6-6h-8z"/>
+  <rect class="good" x="164" y="62" width="48" height="28" rx="6"/>
+  <path class="bg" d="M178 84h-10V68h10v6h-4v4h4z"/>
+  <path class="bg" d="M188 84h-10V68h10v16zm-4-10h-2v6h2v-6z"/>
+  <path class="bg" d="M206 84h-10V68h10v16zm-4-10h-2v2h2v-2zm0 6h-2v2h2v-2z"/>
+</svg>`.trim();
+
+      const link = document.getElementById('favicon');
+      if (!link) return;
+      const iconUrl = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+      link.href = iconUrl;
+    })();
+
+    const SAVE_KEY = 'c64IdleRpgSave_v1';
+
+    const defaultState = () => ({
+      hero: {
+        level: 1,
+        xp: 0,
+        xpToNext: 20,
+        hp: 30,
+        maxHp: 30,
+        attack: 3,
+        gold: 0,
+        potionsUsed: 0,
+        kills: 0,
+        weaponLevel: 0,
+        armorLevel: 0
+      },
+      enemy: null,
+      auto: false,
+      tickCount: 0
+    });
+
+    let state = defaultState();
+
+    const enemies = [
+      { name: 'BYTE RAT', hp: 10, attack: 2, gold: 4, xp: 5 },
+      { name: 'PIXEL SLIME', hp: 14, attack: 3, gold: 6, xp: 7 },
+      { name: 'DISK GHOST', hp: 18, attack: 4, gold: 8, xp: 10 },
+      { name: 'KERNEL KNIGHT', hp: 24, attack: 5, gold: 12, xp: 14 },
+      { name: 'SID DRAGON', hp: 34, attack: 7, gold: 18, xp: 20 }
+    ];
+
+    const shopItems = [
+      {
+        name: 'Sharper Sword',
+        cost: () => 20 + state.hero.weaponLevel * 15,
+        buy: () => {
+          state.hero.weaponLevel++;
+          state.hero.attack += 2;
+          log('You bought a sharper sword. Attack increased.');
+        }
+      },
+      {
+        name: 'Sturdier Armor',
+        cost: () => 25 + state.hero.armorLevel * 20,
+        buy: () => {
+          state.hero.armorLevel++;
+          state.hero.maxHp += 8;
+          state.hero.hp = state.hero.maxHp;
+          log('You upgraded your armor. Max HP increased.');
+        }
+      }
+    ];
+
+    function setStatus(text) {
+      document.getElementById('saveStatus').textContent = text;
+    }
+
+    function scaledEnemy() {
+      const base = enemies[Math.min(enemies.length - 1, Math.floor((state.hero.level - 1) / 2))];
+      const scale = 1 + (state.hero.level - 1) * 0.18;
+      return {
+        name: base.name,
+        hp: Math.floor(base.hp * scale),
+        maxHp: Math.floor(base.hp * scale),
+        attack: Math.floor(base.attack * scale),
+        gold: Math.floor(base.gold * scale),
+        xp: Math.floor(base.xp * scale)
+      };
+    }
+
+    function sanitizeState(obj) {
+      const clean = defaultState();
+      if (!obj || typeof obj !== 'object') return clean;
+
+      const srcHero = obj.hero || {};
+      for (const key of Object.keys(clean.hero)) {
+        if (typeof srcHero[key] === 'number' && Number.isFinite(srcHero[key])) {
+          clean.hero[key] = srcHero[key];
+        }
+      }
+
+      clean.auto = !!obj.auto;
+      clean.tickCount = typeof obj.tickCount === 'number' && Number.isFinite(obj.tickCount) ? obj.tickCount : 0;
+
+      if (obj.enemy && typeof obj.enemy === 'object') {
+        clean.enemy = {
+          name: String(obj.enemy.name || 'BYTE RAT'),
+          hp: Number.isFinite(obj.enemy.hp) ? obj.enemy.hp : 10,
+          maxHp: Number.isFinite(obj.enemy.maxHp) ? obj.enemy.maxHp : 10,
+          attack: Number.isFinite(obj.enemy.attack) ? obj.enemy.attack : 2,
+          gold: Number.isFinite(obj.enemy.gold) ? obj.enemy.gold : 4,
+          xp: Number.isFinite(obj.enemy.xp) ? obj.enemy.xp : 5
+        };
+      }
+
+      return clean;
+    }
+
+    function saveGame(showMessage = false) {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      if (showMessage) setStatus('Game saved locally.');
+    }
+
+    function loadGame() {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) {
+        state = defaultState();
+        return false;
+      }
+
+      try {
+        state = sanitizeState(JSON.parse(raw));
+        return true;
+      } catch (err) {
+        state = defaultState();
+        setStatus('Save data was corrupted, started new game.');
+        return false;
+      }
+    }
+
+    function exportSave() {
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      const box = document.getElementById('saveData');
+      box.value = encoded;
+      box.select();
+      setStatus('Save exported. Copy the code from the box.');
+      saveGame(false);
+    }
+
+    function importSave() {
+      const box = document.getElementById('saveData');
+      const text = box.value.trim();
+      if (!text) {
+        setStatus('Paste a save code first.');
+        return;
+      }
+
+      try {
+        const decoded = decodeURIComponent(escape(atob(text)));
+        state = sanitizeState(JSON.parse(decoded));
+        if (!state.enemy) state.enemy = scaledEnemy();
+        saveGame(false);
+        render();
+        log('Save imported successfully.');
+        setStatus('Save imported successfully.');
+      } catch (err) {
+        setStatus('Invalid save code.');
+      }
+    }
+
+    function spawnEnemy() {
+      state.enemy = scaledEnemy();
+      log('A wild ' + state.enemy.name + ' appears.');
+      render();
+      saveGame(false);
+    }
+
+    function log(text) {
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.textContent = '> ' + text;
+      const logEl = document.getElementById('log');
+      logEl.prepend(line);
+      while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
+    }
+
+    function gainXp(amount) {
+      state.hero.xp += amount;
+      while (state.hero.xp >= state.hero.xpToNext) {
+        state.hero.xp -= state.hero.xpToNext;
+        state.hero.level++;
+        state.hero.xpToNext = Math.floor(state.hero.xpToNext * 1.4);
+        state.hero.maxHp += 6;
+        state.hero.hp = state.hero.maxHp;
+        state.hero.attack += 1;
+        log('LEVEL UP! You are now level ' + state.hero.level + '.');
+      }
+    }
+
+    function fight() {
+      if (!state.enemy) spawnEnemy();
+      if (state.hero.hp <= 0) {
+        state.hero.hp = Math.ceil(state.hero.maxHp * 0.6);
+        state.hero.gold = Math.max(0, state.hero.gold - 8);
+        log('You wake up at the tavern, bruised and poorer.');
+        spawnEnemy();
+        render();
+        saveGame(false);
+        return;
+      }
+
+      const heroDamage = Math.max(1, state.hero.attack + Math.floor(Math.random() * 4));
+      state.enemy.hp -= heroDamage;
+      log('You hit ' + state.enemy.name + ' for ' + heroDamage + '.');
+
+      if (state.enemy.hp <= 0) {
+        log(state.enemy.name + ' is defeated.');
+        state.hero.gold += state.enemy.gold;
+        state.hero.kills++;
+        gainXp(state.enemy.xp);
+        log('Loot: +' + state.enemy.gold + ' gold, +' + state.enemy.xp + ' XP.');
+        spawnEnemy();
+        render();
+        saveGame(false);
+        return;
+      }
+
+      const enemyDamage = Math.max(1, state.enemy.attack + Math.floor(Math.random() * 3) - state.hero.armorLevel);
+      state.hero.hp -= enemyDamage;
+      log(state.enemy.name + ' strikes back for ' + enemyDamage + '.');
+
+      if (state.hero.hp <= 0) {
+        state.hero.hp = 0;
+        log('You were defeated. Click attack to recover at the tavern.');
+      }
+
+      render();
+      saveGame(false);
+    }
+
+    function heal() {
+      if (state.hero.gold < 10) {
+        log('Not enough gold for a potion.');
+        return;
+      }
+      if (state.hero.hp === state.hero.maxHp) {
+        log('You are already at full health.');
+        return;
+      }
+      state.hero.gold -= 10;
+      state.hero.hp = Math.min(state.hero.maxHp, state.hero.hp + 18);
+      state.hero.potionsUsed++;
+      log('Potion used. HP restored.');
+      render();
+      saveGame(false);
+    }
+
+    function buyItem(index) {
+      const item = shopItems[index];
+      const cost = item.cost();
+      if (state.hero.gold < cost) {
+        log('You need more gold for ' + item.name + '.');
+        return;
+      }
+      state.hero.gold -= cost;
+      item.buy();
+      render();
+      saveGame(false);
+    }
+
+    function makePixelSprite(pixels, palette) {
+      const size = 16;
+      const px = 1;
+      const rects = [];
+      for (let y = 0; y < size; y++) {
+        const row = pixels[y] || '';
+        for (let x = 0; x < size; x++) {
+          const key = row[x];
+          if (!key || key === '.') continue;
+          const color = palette[key] || '#000000';
+          rects.push(`<rect x="${x * px}" y="${y * px}" width="${px}" height="${px}" fill="${color}"/>`);
+        }
+      }
+
+      return `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="52" height="52" class="pixel-sprite" aria-hidden="true">
+  <rect x="0" y="0" width="16" height="16" fill="#40318d"/>
+  ${rects.join('\n  ')}
+</svg>`.trim();
+    }
+
+    function heroSpriteSvg() {
+      const pixels = [
+        '................',
+        '.......hhh......',
+        '......hoohh.....',
+        '.....hossoh.....',
+        '.....hossoh.....',
+        '......hooh......',
+        '......oaaao.....',
+        '.....oaattao....',
+        '....oaattttao...',
+        '....oaattttao...',
+        '.....oaattao....',
+        '....ww.oaa.pp...',
+        '......o..o......',
+        '.....o....o.....',
+        '....o......o....',
+        '................',
+        '................'
+      ];
+
+      const palette = {
+        h: '#ffec27', // helmet
+        o: '#111111', // outline
+        s: '#ffffff', // face
+        a: '#87d6dd', // armor
+        t: '#5040a5', // trim
+        w: '#ffffff', // sword
+        p: '#a594ff'  // shield
+      };
+
+      return makePixelSprite(pixels, palette);
+    }
+
+    function enemySpriteSvg(enemyName) {
+      const name = String(enemyName || '').toUpperCase();
+      if (name.includes('RAT')) {
+        return makePixelSprite(
+          [
+            '................',
+            '....eeee........',
+            '...e3333e.......',
+            '..e33bb33e......',
+            '..e333333e......',
+            '...e3333e.......',
+            '....e33e........',
+            '...f3333f.......',
+            '..f333333f......',
+            '..f333333f......',
+            '...f3333f.......',
+            '....f33f........',
+            '.....ff.........',
+            '................',
+            '................',
+            '................'
+          ],
+          { e: '#ff6b6b', 3: '#a594ff', b: '#111111', f: '#87d6dd' }
+        );
+      }
+      if (name.includes('SLIME')) {
+        return makePixelSprite(
+          [
+            '................',
+            '................',
+            '.....ggggg......',
+            '....g44444g.....',
+            '...g44bb44g.....',
+            '..g44444444g....',
+            '..g44444444g....',
+            '..g44444444g....',
+            '...g444444g.....',
+            '....g4444g......',
+            '.....g44g.......',
+            '......gg........',
+            '................',
+            '................',
+            '................',
+            '................'
+          ],
+          { g: '#87d6dd', 4: '#7CFF6B', b: '#111111' }
+        );
+      }
+      if (name.includes('GHOST')) {
+        return makePixelSprite(
+          [
+            '................',
+            '.....hhhh.......',
+            '....h5555h......',
+            '...h55bb55h.....',
+            '..h55555555h....',
+            '..h55555555h....',
+            '..h55555555h....',
+            '..h55555555h....',
+            '..h55h55h55h....',
+            '..h55h55h55h....',
+            '...h5h55h5h.....',
+            '....hh..hh......',
+            '................',
+            '................',
+            '................',
+            '................'
+          ],
+          { h: '#a594ff', 5: '#ffffff', b: '#111111' }
+        );
+      }
+      if (name.includes('KNIGHT')) {
+        return makePixelSprite(
+          [
+            '................',
+            '......iiii......',
+            '.....i6666i.....',
+            '....i66bb66i....',
+            '....i666666i....',
+            '.....i6666i.....',
+            '....jj7777jj....',
+            '...j77777777j...',
+            '...j77777777j...',
+            '....j777777j....',
+            '.....j7777j.....',
+            '....k.77.7k.....',
+            '...k..77..k.....',
+            '......kk........',
+            '................',
+            '................'
+          ],
+          { i: '#87d6dd', 6: '#ffffff', b: '#111111', j: '#ffec27', 7: '#5040a5', k: '#a594ff' }
+        );
+      }
+      // dragon / fallback
+      return makePixelSprite(
+        [
+          '................',
+          '....mmmm........',
+          '...m8888m.......',
+          '..m88bb88m......',
+          '..m888888m......',
+          '...m8888m.......',
+          '....m88m........',
+          '..nn888888n.....',
+          '.n888888888n....',
+          '.n888888888n....',
+          '..n8888888n.....',
+          '...n88888n......',
+          '....nnnn........',
+          '................',
+          '................',
+          '................'
+        ],
+        { m: '#ff6b6b', 8: '#ffec27', b: '#111111', n: '#87d6dd' }
+      );
+    }
+
+    function render() {
+      const hero = state.hero;
+      const enemy = state.enemy || scaledEnemy();
+
+      document.getElementById('stats').innerHTML = `
+        <div class="hero-badge">
+          ${heroSpriteSvg()}
+          <div>
+            <div style="color: var(--accent); font-weight: bold; letter-spacing: 1px;">HERO</div>
+            <div class="small">LV ${hero.level} • ATK ${hero.attack}</div>
+          </div>
+        </div>
+        <div class="stat-line"><span>Level</span><span>${hero.level}</span></div>
+        <div class="stat-line"><span>Gold</span><span>${hero.gold}</span></div>
+        <div class="stat-line"><span>Attack</span><span>${hero.attack}</span></div>
+        <div class="stat-line"><span>Kills</span><span>${hero.kills}</span></div>
+        <div>
+          <div class="stat-line"><span>HP</span><span>${hero.hp} / ${hero.maxHp}</span></div>
+          <div class="bar"><div class="fill" style="width:${(hero.hp / hero.maxHp) * 100}%"></div></div>
+        </div>
+        <div>
+          <div class="stat-line"><span>XP</span><span>${hero.xp} / ${hero.xpToNext}</span></div>
+          <div class="bar"><div class="fill" style="width:${(hero.xp / hero.xpToNext) * 100}% ; background: var(--accent);"></div></div>
+        </div>
+      `;
+
+      document.getElementById('battle').innerHTML = `
+        <div class="sprite-row">
+          <div class="sprite-slot">
+            ${heroSpriteSvg()}
+            <div class="sprite-name">YOU</div>
+          </div>
+          <div class="sprite-slot" style="justify-content:flex-end;">
+            <div class="sprite-name" title="${enemy.name}">${enemy.name}</div>
+            ${enemySpriteSvg(enemy.name)}
+          </div>
+        </div>
+        <div class="stat-line"><span class="enemy-name">${enemy.name}</span><span>ATK ${enemy.attack}</span></div>
+        <div class="stat-line"><span>Enemy HP</span><span>${Math.max(0, enemy.hp)} / ${enemy.maxHp}</span></div>
+        <div class="bar"><div class="fill" style="width:${(Math.max(0, enemy.hp) / enemy.maxHp) * 100}% ; background: var(--danger);"></div></div>
+      `;
+
+      document.getElementById('shop').innerHTML = shopItems.map((item, i) => `
+        <div class="shop-item">
+          <span>${item.name}</span>
+          <span>${item.cost()} gold</span>
+        </div>
+        <button onclick="buyItem(${i})">Buy ${item.name}</button>
+      `).join('');
+
+      document.getElementById('quests').innerHTML = `
+        <div class="stat-line"><span>First Blood</span><span class="${hero.kills >= 1 ? 'good' : ''}">${hero.kills}/1</span></div>
+        <div class="stat-line"><span>Monster Hunter</span><span class="${hero.kills >= 10 ? 'good' : ''}">${hero.kills}/10</span></div>
+        <div class="stat-line"><span>Reach Level 5</span><span class="${hero.level >= 5 ? 'good' : ''}">${hero.level}/5</span></div>
+        <div class="stat-line"><span>Potion Addict</span><span class="${hero.potionsUsed >= 5 ? 'good' : ''}">${hero.potionsUsed}/5</span></div>
+      `;
+
+      document.getElementById('autoBtn').textContent = 'Auto Battle: ' + (state.auto ? 'ON' : 'OFF');
+      document.getElementById('fightBtn').disabled = false;
+    }
+
+    document.getElementById('fightBtn').addEventListener('click', fight);
+    document.getElementById('healBtn').addEventListener('click', heal);
+    document.getElementById('autoBtn').addEventListener('click', () => {
+      state.auto = !state.auto;
+      log('Auto battle ' + (state.auto ? 'enabled' : 'disabled') + '.');
+      render();
+      saveGame(false);
+    });
+    document.getElementById('saveBtn').addEventListener('click', () => saveGame(true));
+    document.getElementById('exportBtn').addEventListener('click', exportSave);
+    document.getElementById('importBtn').addEventListener('click', importSave);
+
+    if (loadGame()) {
+      log('Save loaded from local storage.');
+      setStatus('Local save loaded.');
+    } else {
+      setStatus('Local autosave enabled.');
+    }
+
+    if (!state.enemy) state.enemy = scaledEnemy();
+
+    setInterval(() => {
+      state.tickCount++;
+      if (!state.enemy) spawnEnemy();
+      if (state.auto && state.hero.hp > 0) fight();
+      else if (state.hero.hp > 0 && state.tickCount % 5 === 0) {
+        state.hero.gold += 1;
+        if (state.hero.hp < state.hero.maxHp) state.hero.hp += 1;
+        render();
+        saveGame(false);
+      }
+    }, 1000);
+
+    setInterval(() => saveGame(false), 10000);
+
+    log('Boot sequence complete. Welcome, adventurer.');
+    render();
+  </script>
+
+
+</body>
+</html>
