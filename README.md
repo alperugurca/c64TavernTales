@@ -38,9 +38,8 @@ Single-file **web app**: a C64-styled **idle RPG** you run by opening the HTML.
 1) Take a screenshot and save it into this repo (example: `assets/screenshot.png`)  
 2) Add this line to the README:
 
-```md
 ![C64 Tavern Tales screenshot](assets/alperugurcan.byethost5.com.png)
-```
+
 
 ## License
 
