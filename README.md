@@ -6,7 +6,7 @@ Single-file **web app**. C64-styled **idle RPG** you run by opening the HTML.
 
 ## Live site
 
-[![alperugurcan.byethost5.com](alperugurcan.byethost5.com)](https://alperugurcan.byethost5.com/)
+[![C64 Tavern Tales](assets/alperugurcan.byethost5.com.png)](https://alperugurcan.byethost5.com/)
 
 [alperugurcan.byethost5.com](https://alperugurcan.byethost5.com)
 
