@@ -2,14 +2,11 @@
 
 Single-file **web app**. C64-styled **idle RPG** you run by opening the HTML.
 
-![C64 Tavern Tales screenshot](assets/alperugurcan.byethost5.com.png)
+[![C64 Tavern Tales](assets/alperugurcan.byethost5.com.png)](https://alperugurcan.byethost5.com/)
 
 ## Live site
 
-[![C64 Tavern Tales](assets/alperugurcan.byethost5.com.png)](https://alperugurcan.byethost5.com/)
-
 [alperugurcan.byethost5.com](https://alperugurcan.byethost5.com)
-
 
 ## How to play
 
