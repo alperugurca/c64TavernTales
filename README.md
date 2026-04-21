@@ -1,10 +1,6 @@
 # C64 Tavern Tales
 
-A tiny, single-file **retro idle RPG** inspired by Commodore 64 colors and UI.
-
-## Name
-
-**C64 Tavern Tales**
+A tiny, single-file **retro idle RPG game** inspired by Commodore 64 colors and UI.
 
 ## How to play
 
