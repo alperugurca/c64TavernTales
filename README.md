@@ -39,7 +39,7 @@ Single-file **web app**: a C64-styled **idle RPG** you run by opening the HTML.
 2) Add this line to the README:
 
 ```md
-![C64 Tavern Tales screenshot](assets/screenshot.png)
+![C64 Tavern Tales screenshot](assets/alperugurcan.byethost5.com.png)
 ```
 
 ## License
